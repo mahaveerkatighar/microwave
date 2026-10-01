@@ -1,0 +1,32 @@
+:root{--bg:#f4f6f9;--fg:#1d2733;--card:#fff;--ac:#0b6bcb;--bd:#dde3ea}
+@media(prefers-color-scheme:dark){:root{--bg:#10151b;--fg:#e6edf3;--card:#18202a;--ac:#58a6ff;--bd:#2b3643}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--ac);color:#fff}
+h1{margin:0;font-size:1.3rem}h2{margin:0 0 10px;font-size:1.05rem}
+.badge{background:rgba(255,255,255,.2);padding:4px 10px;border-radius:12px;font-size:.85rem}
+main{max-width:1200px;margin:auto;padding:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
+.card,.panel{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px}
+.card h3{margin:0;font-size:.85rem;opacity:.7}.card p{margin:6px 0 0;font-size:1.7rem;font-weight:700}
+.panel{margin-bottom:12px}
+.settings{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.settings input{width:90px;padding:4px}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}
+.charts .panel{margin:0}
+.cw{position:relative;height:300px}
+.tw{overflow-x:auto;max-height:360px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:6px 10px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:var(--card)}
+footer{text-align:center;font-size:.8rem;opacity:.7;padding:16px}
+
+html{scroll-behavior:smooth}
+.hero{text-align:center;padding:36px 20px 30px;background:linear-gradient(135deg,var(--ac),#073b73);color:#fff}
+.hero h2{margin:0 0 10px;font-size:1.7rem}
+.hero p{max-width:720px;margin:0 auto 20px;opacity:.92;line-height:1.5}
+.hero-btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.btn{display:inline-block;padding:10px 20px;border-radius:8px;border:2px solid #fff;background:transparent;color:#fff;font-size:.95rem;font-weight:600;text-decoration:none;cursor:pointer}
+.btn:hover{background:rgba(255,255,255,.18)}
+.btn.primary{background:#fff;color:#0b4a8f}
+.btn.primary:hover{background:#e8f1fb}

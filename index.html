@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.4-GHz Wireless Propagation Monitor</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<header>
+  <h1>2.4-GHz Wireless Propagation Monitor</h1>
+  <span id="conn" class="badge">Connecting…</span>
+</header>
+
+<section class="hero">
+  <h2>Real-time 2.4-GHz path-loss study</h2>
+  <p>ESP32-S3 transmitter and receiver measure RSSI at known distances. Each saved reading is uploaded to Firebase and compared with free-space path loss (FSPL).</p>
+  <div class="hero-btns">
+    <a class="btn primary" href="#data">View Live Data</a>
+    <a class="btn" href="#graphs">View Graphs</a>
+    <button class="btn" id="btnCsv" type="button">Download CSV</button>
+  </div>
+</section>
+
+<main>
+  <section class="cards" id="data">
+    <div class="card"><h3>Current RSSI</h3><p id="cRssi">--</p></div>
+    <div class="card"><h3>Current Distance</h3><p id="cDist">--</p></div>
+    <div class="card"><h3>Frequency</h3><p id="cFreq">--</p></div>
+    <div class="card"><h3>Measurements</h3><p id="cCount">0</p></div>
+  </section>
+
+  <section class="panel settings">
+    <label>Assumed TX power (dBm) <input id="pt" type="number" step="0.5" value="19.5"></label>
+    <label>Assumed total antenna gain Gt+Gr (dBi) <input id="gains" type="number" step="0.5" value="0"></label>
+    <small>Used only to convert RSSI into an <em>apparent</em> path loss = (TX power + gains) − RSSI. RSSI is uncalibrated, so absolute values carry an unknown offset.</small>
+  </section>
+
+  <section class="charts" id="graphs">
+    <div class="panel"><h2>1. Distance vs RSSI</h2><div class="cw"><canvas id="ch1"></canvas></div></div>
+    <div class="panel"><h2>2. Distance vs Experimental Path Loss</h2><div class="cw"><canvas id="ch2"></canvas></div></div>
+    <div class="panel"><h2>3. Experimental vs Theoretical FSPL</h2><div class="cw"><canvas id="ch3"></canvas></div><p id="fit"></p></div>
+  </section>
+
+  <section class="panel">
+    <h2>Measurement History</h2>
+    <div class="tw"><table>
+      <thead><tr><th>ID</th><th>Timestamp</th><th>Distance (m)</th><th>RSSI (dBm)</th><th>Channel</th><th>Condition</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table></div>
+  </section>
+</main>
+<footer>RSSI is an uncalibrated indicator reported by the ESP32 Wi-Fi subsystem. This is a practical propagation study, not a calibrated RF power measurement.</footer>
+<script src="script.js"></script>
+</body>
+</html>
