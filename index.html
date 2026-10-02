@@ -10,49 +10,216 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
-<header>
+
+<header class="top">
   <h1>2.4-GHz Wireless Propagation Monitor</h1>
-  <span id="conn" class="badge">Connecting…</span>
+  <div class="top-actions">
+    <span id="conn" class="badge">Connecting…</span>
+    <button class="btn-s" id="btnMode" type="button" aria-pressed="false">Show technical details</button>
+    <button class="btn-s" id="btnFull" type="button">Fullscreen</button>
+  </div>
 </header>
 
 <section class="hero">
-  <h2>Real-time 2.4-GHz path-loss study</h2>
-  <p>ESP32-S3 transmitter and receiver measure RSSI at known distances. Each saved reading is uploaded to Firebase and compared with free-space path loss (FSPL).</p>
+  <h2>How far can Wi-Fi reach?</h2>
+  <p>Wi-Fi is an invisible radio wave, and the farther it travels the weaker it gets. This project measures that fading with two small ESP32 boards and shows the results live.</p>
   <div class="hero-btns">
-    <a class="btn primary" href="#data">View Live Data</a>
-    <a class="btn" href="#graphs">View Graphs</a>
-    <button class="btn" id="btnCsv" type="button">Download CSV</button>
+    <a class="btn primary" href="#how">How it works</a>
+    <a class="btn" href="#try">&#9654; Try the demo</a>
+    <a class="btn" href="#data">Live data</a>
+    <a class="btn" href="#graphs">Graphs</a>
+    <button class="btn" id="btnCsv" type="button">&#11015; Download CSV</button>
   </div>
 </section>
 
 <main>
-  <section class="cards" id="data">
-    <div class="card"><h3>Current RSSI</h3><p id="cRssi">--</p></div>
-    <div class="card"><h3>Current Distance</h3><p id="cDist">--</p></div>
-    <div class="card"><h3>Frequency</h3><p id="cFreq">--</p></div>
-    <div class="card"><h3>Measurements</h3><p id="cCount">0</p></div>
+
+  <!-- HOW IT WORKS -->
+  <section class="panel reveal" id="how">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step"><div class="ico">&#128225;</div><h3>1. Send</h3><p>One board (the transmitter) broadcasts a Wi-Fi signal at 2.4 GHz, a bit like a tiny radio station.</p></div>
+      <div class="arrow"><span class="dot"></span></div>
+      <div class="step"><div class="ico">&#128246;</div><h3>2. Measure</h3><p>A second board (the receiver) listens and measures how strong that signal is at a known distance.</p></div>
+      <div class="arrow"><span class="dot"></span></div>
+      <div class="step"><div class="ico">&#128280;</div><h3>3. Save</h3><p>Pressing a button averages the latest readings and saves one measurement, together with the distance.</p></div>
+      <div class="arrow"><span class="dot"></span></div>
+      <div class="step" id="stepCloud"><div class="ico">&#9729;&#65039;</div><h3>4. Show</h3><p>The measurement goes to the cloud (Firebase) and appears on this page within seconds.</p></div>
+    </div>
+    <div class="keyidea">
+      <b>&#128161; Key idea:</b> in open space, doubling the distance makes the signal about <b>4&times; weaker</b> (6 dB less). Walls, people and reflections make it weaker and less predictable. We measure the real thing and compare it with the theory.
+    </div>
   </section>
 
-  <section class="panel settings">
+  <!-- DEMO -->
+  <section class="panel reveal" id="try">
+    <h2>See the signal fade <small>drag the slider or press play</small></h2>
+    <div class="scene">
+      <svg id="sceneSvg" viewBox="0 0 800 280" role="img" aria-label="Animation: a transmitter sends Wi-Fi waves to a receiver that moves farther away and receives a weaker signal">
+        <g id="waves">
+          <circle class="wave" cx="100" cy="110" r="40"></circle>
+          <circle class="wave" cx="100" cy="110" r="40"></circle>
+          <circle class="wave" cx="100" cy="110" r="40"></circle>
+          <circle class="wave" cx="100" cy="110" r="40"></circle>
+        </g>
+        <line class="track" x1="190" y1="226" x2="730" y2="226"></line>
+        <g id="ticks"></g>
+        <text class="lbl small" x="460" y="274" text-anchor="middle">distance between the boards (metres)</text>
+        <line id="sigpath" class="sigpath" x1="134" y1="110" x2="190" y2="110"></line>
+
+        <g id="obWall" style="display:none">
+          <rect x="-9" y="52" width="18" height="116" rx="2" fill="#b5651d"></rect>
+          <path d="M-9 80H9M-9 108H9M-9 136H9" stroke="#f1d9bd" stroke-width="2"></path>
+          <text class="lbl small" x="0" y="186" text-anchor="middle">Wall</text>
+        </g>
+        <g id="obPerson" style="display:none">
+          <circle cx="0" cy="68" r="11" fill="#7c5cbf"></circle>
+          <path d="M-16 92Q0 80 16 92L16 140H-16Z" fill="#7c5cbf"></path>
+          <text class="lbl small" x="0" y="160" text-anchor="middle">Person</text>
+        </g>
+
+        <g id="tx">
+          <line x1="96" y1="82" x2="96" y2="58" stroke="var(--fg)" stroke-width="3"></line>
+          <circle cx="96" cy="55" r="5" fill="var(--ac)"></circle>
+          <rect class="board" x="62" y="82" width="68" height="56" rx="8"></rect>
+          <rect x="76" y="94" width="26" height="22" rx="3" fill="#1d2733"></rect>
+          <circle cx="116" cy="102" r="4" fill="#2ecc71"></circle>
+          <text class="lbl" x="96" y="162" text-anchor="middle">Transmitter</text>
+        </g>
+
+        <g id="rx">
+          <circle id="rxGlow" cx="0" cy="110" r="50" fill="var(--ac)" opacity="0.4"></circle>
+          <rect class="board" x="-34" y="86" width="68" height="48" rx="8"></rect>
+          <rect x="-22" y="94" width="30" height="18" rx="2" fill="#1d2733"></rect>
+          <circle cx="18" cy="104" r="4" fill="#e74c3c"></circle>
+          <circle cx="18" cy="120" r="4" fill="#e74c3c"></circle>
+          <text id="rxDist" class="lbl strong" x="0" y="72" text-anchor="middle">1.0 m</text>
+          <text class="lbl" x="0" y="160" text-anchor="middle">Receiver</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="demo-controls">
+      <button class="btn-s dark" id="btnPlay" type="button">&#9654; Play walk-away demo</button>
+      <label class="slider">Distance
+        <input id="dist" type="range" min="1" max="10" step="0.5" value="1" aria-label="Distance between transmitter and receiver in metres">
+        <b id="distVal">1.0 m</b>
+      </label>
+    </div>
+
+    <div class="chips" id="chips" role="group" aria-label="Choose what was between the boards">
+      <button class="chip active" type="button" data-c="ALL">All readings <span class="cnt" id="n_ALL">0</span></button>
+      <button class="chip" type="button" data-c="LOS">Clear line of sight <span class="cnt" id="n_LOS">0</span></button>
+      <button class="chip" type="button" data-c="WALL">Wall in between <span class="cnt" id="n_WALL">0</span></button>
+      <button class="chip" type="button" data-c="HUMAN">Person in between <span class="cnt" id="n_HUMAN">0</span></button>
+    </div>
+
+    <div class="readouts">
+      <div class="ro"><h4>&#129514; Theory (empty space)</h4><p id="roTheory">--</p></div>
+      <div class="ro"><h4>&#128225; Our measurement</h4><p id="roMeas">--</p><div id="bars" class="bars"></div></div>
+    </div>
+  </section>
+
+  <!-- REMOTE CONTROL -->
+  <section class="panel reveal" id="control">
+    <div class="row-between">
+      <h2>Remote control <small>same as the SAVE and NEXT buttons on the receiver board</small></h2>
+      <span id="rxState" class="pill off">Receiver: checking&hellip;</span>
+    </div>
+    <div class="ctl-live">
+      <div class="live-item"><span>Distance</span><b id="stDist">--</b></div>
+      <div class="live-item"><span>Condition</span><b id="stCond">--</b></div>
+      <div class="live-item"><span>Trial</span><b id="stTrial">--</b></div>
+      <div class="live-item"><span>Samples</span><b id="stWin">--</b></div>
+      <div class="live-item"><span>Live signal</span><b id="stRssi">--</b></div>
+    </div>
+    <div class="ctl-btns">
+      <button class="cbtn save" id="btnSave" type="button" disabled>&#128190; SAVE</button>
+      <button class="cbtn next" id="btnNext" type="button" disabled title="Cycles 1, 2, 3, 5, 7, 10 m">&#10145; NEXT distance</button>
+      <button class="cbtn cond" id="btnCond" type="button" disabled title="Cycles clear line of sight, wall, person">&#128256; NEXT condition</button>
+    </div>
+    <div class="pinrow">
+      <label>Control PIN <input id="pin" type="password" autocomplete="off" placeholder="enter PIN"></label>
+      <button class="btn-s dark" id="btnUnlock" type="button">Unlock</button>
+      <span id="lockState">&#128274; Locked</span>
+    </div>
+    <p id="ctlMsg" class="ctl-msg" aria-live="polite">Enter the PIN and press Unlock to use the buttons. The receiver must be powered and connected to the hotspot.</p>
+    <small>Procedure: place the receiver at the marked distance, press NEXT until the distance matches, wait until Samples shows 10/10, then press SAVE. The physical buttons on the board still work too.</small>
+  </section>
+
+  <!-- LIVE DATA -->
+  <section class="cards reveal" id="data">
+    <div class="card">
+      <h3>Latest signal strength</h3>
+      <p id="cRssi">--</p>
+      <div class="qrow"><div id="cBars" class="bars"></div><span id="cQual" class="qual">No data yet</span></div>
+      <small class="tech">RSSI in dBm. Closer to 0 = stronger.</small>
+    </div>
+    <div class="card"><h3>Receiver distance</h3><p id="cDist">--</p><small>set from a measuring tape</small></div>
+    <div class="card"><h3>Radio band</h3><p id="cFreq">--</p><small id="cFreqNote">same band as home Wi-Fi</small></div>
+    <div class="card"><h3>Readings saved</h3><p id="cCount">0</p><small>each is an average of up to 10 scans</small></div>
+  </section>
+
+  <!-- FINDINGS -->
+  <section class="panel reveal" id="findings">
+    <h2>What have we found so far?</h2>
+    <div id="summary"><p>Loading…</p></div>
+  </section>
+
+  <section class="panel settings tech">
     <label>Assumed TX power (dBm) <input id="pt" type="number" step="0.5" value="19.5"></label>
     <label>Assumed total antenna gain Gt+Gr (dBi) <input id="gains" type="number" step="0.5" value="0"></label>
     <small>Used only to convert RSSI into an <em>apparent</em> path loss = (TX power + gains) − RSSI. RSSI is uncalibrated, so absolute values carry an unknown offset.</small>
   </section>
 
-  <section class="charts" id="graphs">
-    <div class="panel"><h2>1. Distance vs RSSI</h2><div class="cw"><canvas id="ch1"></canvas></div></div>
-    <div class="panel"><h2>2. Distance vs Experimental Path Loss</h2><div class="cw"><canvas id="ch2"></canvas></div></div>
-    <div class="panel"><h2>3. Experimental vs Theoretical FSPL</h2><div class="cw"><canvas id="ch3"></canvas></div><p id="fit"></p></div>
+  <!-- GRAPHS -->
+  <section class="charts reveal" id="graphs">
+    <div class="panel">
+      <h2>1. Signal strength vs distance</h2>
+      <p class="explain">Each dot is one saved reading. Higher on the chart means a stronger signal (closer to 0 dBm).</p>
+      <div class="cw"><canvas id="ch1"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>2. How much signal is lost</h2>
+      <p class="explain">Path loss is how many decibels the signal weakens on its way. Higher means more loss.</p>
+      <div class="cw"><canvas id="ch2"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>3. Real measurements vs theory</h2>
+      <p class="explain">The dashed red line is what physics predicts in empty space. The measured line usually sits higher because RSSI is not calibrated, so compare how steeply the lines rise.</p>
+      <div class="cw"><canvas id="ch3"></canvas></div>
+      <p id="fit" class="tech"></p>
+    </div>
   </section>
 
-  <section class="panel">
-    <h2>Measurement History</h2>
+  <!-- TABLE -->
+  <section class="panel reveal">
+    <div class="row-between">
+      <h2>Measurement history</h2>
+      <div class="row-btns">
+        <button class="btn-s dark" id="btnCsv2" type="button">&#11015; Download CSV</button>
+        <button class="btn-s dark" id="btnPrint" type="button">&#128438; Print / save as PDF</button>
+      </div>
+    </div>
     <div class="tw"><table>
-      <thead><tr><th>ID</th><th>Timestamp</th><th>Distance (m)</th><th>RSSI (dBm)</th><th>Channel</th><th>Condition</th></tr></thead>
+      <thead><tr><th>ID</th><th>Time</th><th>Distance (m)</th><th>Signal (RSSI, dBm)</th><th>Channel</th><th>Condition</th></tr></thead>
       <tbody id="tbody"></tbody>
     </table></div>
   </section>
+
+  <!-- GLOSSARY -->
+  <section class="panel reveal">
+    <h2>Words explained</h2>
+    <details><summary>RSSI</summary><p>Received Signal Strength Indicator: a number the Wi-Fi chip reports to say how strong the signal it received was. It is an indicator, not a laboratory-grade power measurement.</p></details>
+    <details><summary>dBm</summary><p>A way of writing power on a log scale. 0 dBm is one milliwatt. Wi-Fi signals at the receiver are tiny, so the numbers are negative: &minus;40 is strong, &minus;80 is weak.</p></details>
+    <details><summary>Path loss</summary><p>How much a signal weakens between transmitter and receiver, in decibels (dB). Free-space path loss is the theoretical loss over empty space.</p></details>
+    <details><summary>Line of sight</summary><p>Nothing between the two boards. A wall or a person in between usually weakens the signal further.</p></details>
+    <details><summary>Multipath and fading</summary><p>Indoors the signal bounces off walls, floors and furniture and arrives by several routes that can add up or cancel out. This makes readings swing by several dB even when nothing moves.</p></details>
+    <details><summary>2.4 GHz</summary><p>A microwave frequency band used by Wi-Fi and Bluetooth. This is why the project belongs to Microwave Engineering.</p></details>
+  </section>
 </main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <footer>RSSI is an uncalibrated indicator reported by the ESP32 Wi-Fi subsystem. This is a practical propagation study, not a calibrated RF power measurement.</footer>
 <script src="script.js"></script>
 </body>
